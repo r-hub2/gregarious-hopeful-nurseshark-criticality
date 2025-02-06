@@ -98,21 +98,13 @@ Predict <- function(
 # predict keff values
 #
   if (keff.cutoff > 0 & nrow(bn.dist) > 1) {
-
     old.nrow <- nrow(bn.dist)
-
     bn.dist$keff <- metamodel[[1]][[1]] %>% stats::predict(bn.df, verbose = FALSE)
-
     bn.df <- cbind(bn.df, bn.dist$keff) %>% subset(bn.dist$keff >= keff.cutoff)
     bn.df <- bn.df[ , -ncol(bn.df)]
-
     bn.dist <- bn.dist %>% subset(keff >= keff.cutoff)
-
     new.nrow <- nrow(bn.dist)
-
-    cat('\nInitial predictions complete (', old.nrow, ' --> ', new.nrow, ')', sep = '')
-    cat('')
-
+    cat('\nInitial predictions complete (', old.nrow, ' --> ', new.nrow, ')\n', sep = '')
   }
 
   if (nrow(bn.dist) > 1) {
@@ -120,8 +112,11 @@ Predict <- function(
     for (i in 1:length(metamodel[[1]])) {
       keff[ , i] <- metamodel[[1]][[i]] %>% stats::predict(bn.df, verbose = FALSE) %>% suppressWarnings()
       keff[ , i] <- keff[ , i] * metamodel[[2]][[i]]
-      cat('\nPredictions complete (', i, ' of ', length(metamodel[[1]]), ' metamodels)', sep = '')
-      cat('')
+      if (i < length(metamodel[[1]])) {
+        cat('Predictions complete (', i, '/', length(metamodel[[1]]), ')', sep = '')
+      } else {
+        cat('Predictions complete (', i, '/', length(metamodel[[1]]), ')\n', sep = '')
+      }
     }
     bn.dist$keff <- rowSums(keff)
   }

@@ -1,6 +1,6 @@
 Package: criticality
 Title: Modeling Fissile Material Operations in Nuclear Facilities
-Version: 0.9.4
+Version: 0.9.5
 Authors@R: 
     person("William", "Zywiec", , "willzywiec@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-1842-9599"))
@@ -11,9 +11,9 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
-Imports: bnlearn, dplyr, evd, fitdistrplus, ggplot2, keras, magrittr,
-        parallel, reticulate, scales
+Imports: bnlearn, dplyr, evd, fitdistrplus, ggplot2, magrittr,
+        parallel, reticulate, scales, torch
 NeedsCompilation: no
-Packaged: 2024-08-26 05:07:20 UTC; Will
+Packaged: 2025-02-06 02:30:01 UTC; Will
 Author: William Zywiec [aut, cre] (<https://orcid.org/0000-0002-1842-9599>)
 Maintainer: William Zywiec <willzywiec@gmail.com>
