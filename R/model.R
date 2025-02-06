@@ -9,7 +9,6 @@
 #' @export
 #' @import torch
 #' @import magrittr
-
 Model <- function(dataset,
                  layers = '8192-256-256-256-256-16',
                  loss = 'sse',
@@ -26,20 +25,35 @@ Model <- function(dataset,
   }
   
   # Define model architecture using nn_module
-  model <- nn_module(
+  DNN <- nn_module(
+    "DNN",
     initialize = function() {
       # Input dimension from dataset
       input_dim <- dim(dataset$training.df)[2]
       
-      # Create a list to store all layers
-      self$layers <- nn_module_list()
+      # Create sequential layers
+      self$hidden_layers <- nn_sequential()
       
       # Add input layer
-      self$layers$append(nn_linear(input_dim, layer_sizes[1]))
+      self$hidden_layers$add_module(
+        "layer1",
+        nn_linear(input_dim, layer_sizes[1])
+      )
+      self$hidden_layers$add_module(
+        "relu1",
+        nn_relu()
+      )
       
       # Add hidden layers
       for (i in 1:(length(layer_sizes) - 1)) {
-        self$layers$append(nn_linear(layer_sizes[i], layer_sizes[i + 1]))
+        self$hidden_layers$add_module(
+          paste0("layer", i + 1),
+          nn_linear(layer_sizes[i], layer_sizes[i + 1])
+        )
+        self$hidden_layers$add_module(
+          paste0("relu", i + 1),
+          nn_relu()
+        )
       }
       
       # Add output layer
@@ -47,15 +61,14 @@ Model <- function(dataset,
     },
     
     forward = function(x) {
-      # Apply ReLU activation to all hidden layers
-      for (layer in self$layers) {
-        x <- torch_relu(layer(x))
-      }
-      # Final output layer without activation
+      x <- self$hidden_layers(x)
       x <- self$output(x)
       return(x)
     }
   )
+  
+  # Create model instance
+  model <- DNN()
   
   # Define optimizer based on selected algorithm
   optimizer <- switch(opt.alg,
@@ -66,5 +79,4 @@ Model <- function(dataset,
                      stop("Unsupported optimizer algorithm"))
   
   return(list(model = model, criterion = loss, optimizer = optimizer))
-
 }
