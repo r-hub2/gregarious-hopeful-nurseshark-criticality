@@ -19,15 +19,19 @@ Model <- function(dataset,
                   learning.rate = 0.00075,
                   ext.dir) {
   
-  # parse the layers string
+  # parse layers string
   layers <- strsplit(layers, '-') %>% unlist() %>% as.integer()
 
-  # define the model architecture using nn.Module
+  # build sum of squared errors (SSE) loss function
+  if (loss == 'sse') loss <- function(y_true, y_pred) torch::sum((y_true - y_pred)^2)
+
+  # define model architecture using nn.Module
   model <- nn_module(
+
     initialize = function() {
       self$fc1 <- nn_linear(dim(dataset$training.df)[2], layers[1])
       
-      # Dynamically create the layers
+      # dynamically create layers
       if (length(layers) > 1) {
         self$fc2 <- nn_linear(layers[1], layers[2])
       }
@@ -53,12 +57,12 @@ Model <- function(dataset,
         self$fc9 <- nn_linear(layers[8], layers[9])
       }
       
-      # Output layer
+      # output layer
       self$output <- nn_linear(layers[length(layers)], 1)
     },
     
+    # forward pass through the network
     forward = function(x) {
-      # Forward pass through the network
       x <- torch_relu(self$fc1(x))
       if (length(layers) > 1) {
         x <- torch_relu(self$fc2(x))
@@ -88,13 +92,8 @@ Model <- function(dataset,
       return(x)
     }
   )
-
-  # Define loss function
-  if (loss == 'sse') {
-    criterion <- nn_mse_loss()
-  }
   
-  # Define optimizer based on selected algorithm
+  # define optimizer based on selected algorithm
   if (opt.alg == 'adadelta') {
     optimizer <- optim_adadelta(model$parameters, lr = learning.rate)
   } else if (opt.alg == 'adagrad') {
@@ -109,6 +108,6 @@ Model <- function(dataset,
     optimizer <- optim_rmsprop(model$parameters, lr = learning.rate)
   }
   
-  # Return the model and optimizer
-  return(list(model = model, criterion = criterion, optimizer = optimizer))
+  # return model, loss, and optimizer
+  return(list(model = model, criterion = loss, optimizer = optimizer))
 }

@@ -93,6 +93,7 @@ NN <- function(
   #
   # check metamodel settings
   #
+
   if (file.exists(paste0(training.dir, '/model-settings.txt'))) {
     old.settings <- utils::read.table(paste0(training.dir, '/model-settings.txt'), sep = '\n') %>% as.data.frame()
     if (!identical(new.settings[-4, ], old.settings[-4, ])) {
@@ -112,12 +113,10 @@ NN <- function(
     utils::write.table(new.settings, file = paste0(training.dir, '/model-settings.txt'), quote = FALSE, row.names = FALSE, col.names = FALSE)
   }
 
-  # build sum of squared errors (SSE) loss function using torch
-  if (identical(tolower(loss), 'sse')) loss <- function(y_true, y_pred) torch::sum((y_true - y_pred)^2)
-
   #
   # load metamodel
   #
+
   if (
     file.exists(paste0(training.dir, '/metamodel.RData')) &&
     identical(new.settings[-4, ], old.settings[-4, ]) &&
@@ -135,9 +134,11 @@ NN <- function(
       metamodel[[i]] <- torch::load(paste0(remodel.dir, '/', i, '-', min.wt[[1]][[i]], '.h5'))
       wt[i] <- min.wt[[2]][[i]]
     }
+
   #
   # train metamodel
   #
+
   } else {
 
     model.files <- list.files(path = model.dir, pattern = '\\.h5$')
@@ -151,7 +152,6 @@ NN <- function(
           for (batch in dataset$training.df) {
             inputs <- torch_tensor(batch$inputs)
             targets <- torch_tensor(batch$keff)
-
             output <- model(inputs)
             loss_val <- loss(output, targets)
             loss_val$backward()
@@ -165,7 +165,6 @@ NN <- function(
           for (batch in dataset$training.df) {
             inputs <- torch_tensor(batch$inputs)
             targets <- torch_tensor(batch$keff)
-
             output <- model(inputs)
             loss_val <- loss(output, targets)
             loss_val$backward()
@@ -194,6 +193,7 @@ NN <- function(
     #
     # retrain metamodel (epochs / 10)
     #
+    
     remodel.files <- list.files(path = remodel.dir, pattern = '\\.h5$')
 
     history <- rep(list(0), length(ensemble.size))
