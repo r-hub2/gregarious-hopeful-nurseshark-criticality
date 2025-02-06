@@ -2,7 +2,7 @@
 % Please edit documentation in R/model.R
 \name{Model}
 \alias{Model}
-\title{This function builds the deep neural network metamodel architecture using torch.}
+\title{Build deep neural network metamodel architecture using torch}
 \usage{
 Model(
   dataset,
@@ -30,5 +30,5 @@ Model(
 A deep neural network metamodel
 }
 \description{
-This function builds the deep neural network metamodel architecture using torch.
+Build deep neural network metamodel architecture using torch
 }

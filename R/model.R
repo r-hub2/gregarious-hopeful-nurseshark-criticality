@@ -1,6 +1,4 @@
-# Model Function
-#
-#' This function builds the deep neural network metamodel architecture using torch.
+#' Build deep neural network metamodel architecture using torch
 #' @param dataset Training and test data
 #' @param layers String that defines the deep neural network architecture (e.g., "64-64")
 #' @param loss Loss function
@@ -13,96 +11,60 @@
 #' @import magrittr
 
 Model <- function(dataset,
-                  layers = '8192-256-256-256-256-16',
-                  loss = 'sse',
-                  opt.alg = 'adam',
-                  learn.rate = 0.00075,
-                  ext.dir) {
+                 layers = '8192-256-256-256-256-16',
+                 loss = 'sse',
+                 opt.alg = 'adam',
+                 learn.rate = 0.00075,
+                 ext.dir) {
   
-  # parse layers string
-  layers <- strsplit(layers, '-') %>% unlist() %>% as.integer()
-
-  # build sum of squared errors (SSE) loss function
-  if (loss == 'sse') loss <- function(y_true, y_pred) torch::sum((y_true - y_pred)^2)
-
-  # define model architecture using nn.Module
+  # Parse layers string
+  layer_sizes <- strsplit(layers, '-') %>% unlist() %>% as.integer()
+  
+  # Build sum of squared errors (SSE) loss function
+  if (loss == 'sse') {
+    loss <- function(y_true, y_pred) torch::sum((y_true - y_pred)^2)
+  }
+  
+  # Define model architecture using nn_module
   model <- nn_module(
-
     initialize = function() {
-      self$fc1 <- nn_linear(dim(dataset$training.df)[2], layers[1])
-      # dynamically create layers
-      if (length(layers) > 1) {
-        self$fc2 <- nn_linear(layers[1], layers[2])
+      # Input dimension from dataset
+      input_dim <- dim(dataset$training.df)[2]
+      
+      # Create a list to store all layers
+      self$layers <- nn_module_list()
+      
+      # Add input layer
+      self$layers$append(nn_linear(input_dim, layer_sizes[1]))
+      
+      # Add hidden layers
+      for (i in 1:(length(layer_sizes) - 1)) {
+        self$layers$append(nn_linear(layer_sizes[i], layer_sizes[i + 1]))
       }
-      if (length(layers) > 2) {
-        self$fc3 <- nn_linear(layers[2], layers[3])
-      }
-      if (length(layers) > 3) {
-        self$fc4 <- nn_linear(layers[3], layers[4])
-      }
-      if (length(layers) > 4) {
-        self$fc5 <- nn_linear(layers[4], layers[5])
-      }
-      if (length(layers) > 5) {
-        self$fc6 <- nn_linear(layers[5], layers[6])
-      }
-      if (length(layers) > 6) {
-        self$fc7 <- nn_linear(layers[6], layers[7])
-      }
-      if (length(layers) > 7) {
-        self$fc8 <- nn_linear(layers[7], layers[8])
-      }
-      if (length(layers) > 8) {
-        self$fc9 <- nn_linear(layers[8], layers[9])
-      }
-      # output layer
-      self$output <- nn_linear(layers[length(layers)], 1)
+      
+      # Add output layer
+      self$output <- nn_linear(layer_sizes[length(layer_sizes)], 1)
     },
     
-    # forward pass through neural network
     forward = function(x) {
-      x <- torch_relu(self$fc1(x))
-      if (length(layers) > 1) {
-        x <- torch_relu(self$fc2(x))
+      # Apply ReLU activation to all hidden layers
+      for (layer in self$layers) {
+        x <- torch_relu(layer(x))
       }
-      if (length(layers) > 2) {
-        x <- torch_relu(self$fc3(x))
-      }
-      if (length(layers) > 3) {
-        x <- torch_relu(self$fc4(x))
-      }
-      if (length(layers) > 4) {
-        x <- torch_relu(self$fc5(x))
-      }
-      if (length(layers) > 5) {
-        x <- torch_relu(self$fc6(x))
-      }
-      if (length(layers) > 6) {
-        x <- torch_relu(self$fc7(x))
-      }
-      if (length(layers) > 7) {
-        x <- torch_relu(self$fc8(x))
-      }
-      if (length(layers) > 8) {
-        x <- torch_relu(self$fc9(x))
-      }
+      # Final output layer without activation
       x <- self$output(x)
       return(x)
     }
-
   )
   
-  # define optimizer based on selected algorithm
-  if (opt.alg == 'adadelta') {
-    optimizer <- optim_adadelta(model$parameters, lr = learn.rate)
-  } else if (opt.alg == 'adagrad') {
-    optimizer <- optim_adagrad(model$parameters, lr = learn.rate)
-  } else if (opt.alg == 'adam') {
-    optimizer <- optim_adam(model$parameters, lr = learn.rate)
-  } else if (opt.alg == 'rmsprop') {
-    optimizer <- optim_rmsprop(model$parameters, lr = learn.rate)
-  }
+  # Define optimizer based on selected algorithm
+  optimizer <- switch(opt.alg,
+                     "adadelta" = optim_adadelta(model$parameters, lr = learn.rate),
+                     "adagrad" = optim_adagrad(model$parameters, lr = learn.rate),
+                     "adam" = optim_adam(model$parameters, lr = learn.rate),
+                     "rmsprop" = optim_rmsprop(model$parameters, lr = learn.rate),
+                     stop("Unsupported optimizer algorithm"))
   
-  # return model, loss, and optimizer
   return(list(model = model, criterion = loss, optimizer = optimizer))
+
 }
