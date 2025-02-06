@@ -12,8 +12,8 @@ NN(
   epochs = 1500,
   layers = "8192-256-256-256-256-16",
   loss = "sse",
-  opt.alg = "adam",
-  learn.rate = 0.00075,
+  opt.alg = "adamax",
+  learning.rate = 0.00075,
   val.split = 0.2,
   overwrite = FALSE,
   replot = TRUE,
@@ -40,7 +40,7 @@ NN(
 
 \item{opt.alg}{Optimization algorithm}
 
-\item{learn.rate}{Learning rate}
+\item{learning.rate}{Learning rate}
 
 \item{val.split}{Validation split}
 
@@ -50,7 +50,7 @@ NN(
 
 \item{reweight}{Boolean (TRUE/FALSE) that determines if metamodel weights should be recalculated}
 
-\item{verbose}{Boolean (TRUE/FALSE) that determines if TensorFlow and Fit function output should be displayed}
+\item{verbose}{Boolean (TRUE/FALSE) that determines if training output should be displayed}
 
 \item{ext.dir}{External directory (full path)}
 
@@ -60,29 +60,5 @@ NN(
 A list of lists containing an ensemble of deep neural networks and weights
 }
 \description{
-This function trains an ensemble of deep neural networks to predict keff values (imports Tabulate, Scale, Model, Fit, Plot, and Test functions).
-}
-\examples{
-
-ext.dir <- paste0(tempdir(), "/criticality/extdata")
-dir.create(ext.dir, recursive = TRUE, showWarnings = FALSE)
-
-extdata <- paste0(.libPaths()[1], "/criticality/extdata")
-file.copy(paste0(extdata, "/facility.csv"), ext.dir, recursive = TRUE)
-file.copy(paste0(extdata, "/mcnp-dataset.RData"), ext.dir, recursive = TRUE)
-
-config <- FALSE
-try(config <- reticulate::py_config()$available)
-try(if (config == TRUE) {
-  NN(
-    batch.size = 128,
-    ensemble.size = 1,
-    epochs = 10,
-    layers = "256-256-16",
-    loss = "sse",
-    replot = FALSE,
-    ext.dir = ext.dir
-  )
-})
-
+This function trains an ensemble of deep neural networks to predict keff values using torch.
 }

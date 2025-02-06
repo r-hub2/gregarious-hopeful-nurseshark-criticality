@@ -2,14 +2,14 @@
 % Please edit documentation in R/model.R
 \name{Model}
 \alias{Model}
-\title{Build deep neural network metamodel architecture using torch}
+\title{Model Function}
 \usage{
 Model(
   dataset,
   layers = "8192-256-256-256-256-16",
   loss = "sse",
-  opt.alg = "adam",
-  learn.rate = 0.00075,
+  opt.alg = "adamax",
+  learning.rate = 0.00075,
   ext.dir
 )
 }
@@ -22,13 +22,13 @@ Model(
 
 \item{opt.alg}{Optimization algorithm}
 
-\item{learn.rate}{Learning rate}
+\item{learning.rate}{Learning rate}
 
 \item{ext.dir}{External directory (full path)}
 }
 \value{
-A deep neural network metamodel
+A deep neural network metamodel of Monte Carlo radiation transport code simulation data
 }
 \description{
-Build deep neural network metamodel architecture using torch
+This function builds the deep neural network metamodel architecture using torch.
 }

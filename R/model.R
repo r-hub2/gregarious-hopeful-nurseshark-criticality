@@ -1,82 +1,154 @@
-#' Build deep neural network metamodel architecture using torch
+#' Model Function
+#'
+#' This function builds the deep neural network metamodel architecture using torch.
 #' @param dataset Training and test data
 #' @param layers String that defines the deep neural network architecture (e.g., "64-64")
 #' @param loss Loss function
 #' @param opt.alg Optimization algorithm
-#' @param learn.rate Learning rate
+#' @param learning.rate Learning rate
 #' @param ext.dir External directory (full path)
-#' @return A deep neural network metamodel
+#' @return A deep neural network metamodel of Monte Carlo radiation transport code simulation data
 #' @export
 #' @import torch
 #' @import magrittr
-Model <- function(dataset,
-                 layers = '8192-256-256-256-256-16',
-                 loss = 'sse',
-                 opt.alg = 'adam',
-                 learn.rate = 0.00075,
-                 ext.dir) {
+Model <- function(
+    dataset,
+    layers = '8192-256-256-256-256-16',
+    loss = 'sse',
+    opt.alg = 'adamax',
+    learning.rate = 0.00075,
+    ext.dir) {
   
-  # Parse layers string
-  layer_sizes <- strsplit(layers, '-') %>% unlist() %>% as.integer()
+  # Parse layers string into integer vector
+  layer_sizes <- strsplit(layers, '-') %>% 
+    unlist() %>% 
+    as.integer()
   
-  # Build sum of squared errors (SSE) loss function
-  if (loss == 'sse') {
-    loss <- function(y_true, y_pred) torch::sum((y_true - y_pred)^2)
-  }
-  
-  # Define model architecture using nn_module
-  DNN <- nn_module(
+  # Define the neural network structure
+  net <- nn_module(
     "DNN",
     initialize = function() {
-      # Input dimension from dataset
+      # Get input dimension from dataset
       input_dim <- dim(dataset$training.df)[2]
       
-      # Create sequential layers
-      self$hidden_layers <- nn_sequential()
+      # Create sequential container for layers
+      self$network <- nn_sequential()
       
       # Add input layer
-      self$hidden_layers$add_module(
-        "layer1",
+      self$network$append(
         nn_linear(input_dim, layer_sizes[1])
       )
-      self$hidden_layers$add_module(
-        "relu1",
-        nn_relu()
-      )
+      self$network$append(nn_relu())
       
       # Add hidden layers
-      for (i in 1:(length(layer_sizes) - 1)) {
-        self$hidden_layers$add_module(
-          paste0("layer", i + 1),
+      for (i in seq_len(length(layer_sizes) - 1)) {
+        self$network$append(
           nn_linear(layer_sizes[i], layer_sizes[i + 1])
         )
-        self$hidden_layers$add_module(
-          paste0("relu", i + 1),
-          nn_relu()
-        )
+        self$network$append(nn_relu())
       }
       
-      # Add output layer
-      self$output <- nn_linear(layer_sizes[length(layer_sizes)], 1)
+      # Add output layer (linear activation by default)
+      self$network$append(
+        nn_linear(layer_sizes[length(layer_sizes)], 1)
+      )
     },
     
     forward = function(x) {
-      x <- self$hidden_layers(x)
-      x <- self$output(x)
-      return(x)
+      self$network(x)
     }
   )
   
   # Create model instance
-  model <- DNN()
+  model <- net()
   
-  # Define optimizer based on selected algorithm
-  optimizer <- switch(opt.alg,
-                     "adadelta" = optim_adadelta(model$parameters, lr = learn.rate),
-                     "adagrad" = optim_adagrad(model$parameters, lr = learn.rate),
-                     "adam" = optim_adam(model$parameters, lr = learn.rate),
-                     "rmsprop" = optim_rmsprop(model$parameters, lr = learn.rate),
-                     stop("Unsupported optimizer algorithm"))
+  # Define loss function
+  criterion <- if (loss == 'sse') {
+    function(pred, target) {
+      torch_sum((pred - target)^2)
+    }
+  } else {
+    stop("Unsupported loss function")
+  }
   
-  return(list(model = model, criterion = loss, optimizer = optimizer))
+  # Define available optimizers
+  optimizers <- list(
+    adadelta = \() optim_adadelta(model$parameters, lr = learning.rate),
+    adagrad = \() optim_adagrad(model$parameters, lr = learning.rate),
+    adam = \() optim_adam(model$parameters, lr = learning.rate),
+    adamax = \() optim_adamax(model$parameters, lr = learning.rate),
+    rmsprop = \() optim_rmsprop(model$parameters, lr = learning.rate)
+  )
+  
+  # Validate and select optimizer
+  if (!opt.alg %in% names(optimizers)) {
+    stop(sprintf(
+      "Invalid optimizer '%s'. Available optimizers: %s",
+      opt.alg,
+      paste(names(optimizers), collapse = ", ")
+    ))
+  }
+  
+  # Create optimizer
+  optimizer <- optimizers[[opt.alg]]()
+  
+  # Return model components
+  list(
+    model = model,
+    criterion = criterion,
+    optimizer = optimizer
+  )
+}
+
+#' Training function for the model
+#' @param model_obj Model object returned by Model()
+#' @param dataset Training dataset
+#' @param epochs Number of training epochs
+#' @param batch_size Batch size for training
+#' @param verbose Whether to print progress
+train_model <- function(model_obj, dataset, epochs = 100, batch_size = 32, verbose = TRUE) {
+  # Extract components
+  model <- model_obj$model
+  criterion <- model_obj$criterion
+  optimizer <- model_obj$optimizer
+  
+  # Convert data to torch tensors
+  x_train <- torch_tensor(as.matrix(dataset$training.df))
+  y_train <- torch_tensor(as.matrix(dataset$training.labels))
+  
+  # Set model to training mode
+  model$train()
+  
+  # Training loop
+  n_samples <- dim(x_train)[1]
+  
+  for (epoch in 1:epochs) {
+    # Mini-batch training
+    total_loss <- 0
+    
+    for (b in seq(1, n_samples, batch_size)) {
+      # Get batch indices
+      end_idx <- min(b + batch_size - 1, n_samples)
+      batch_x <- x_train[b:end_idx, ]
+      batch_y <- y_train[b:end_idx, ]
+      
+      # Forward pass
+      optimizer$zero_grad()
+      output <- model(batch_x)
+      loss <- criterion(output, batch_y)
+      
+      # Backward pass and optimize
+      loss$backward()
+      optimizer$step()
+      
+      total_loss <- total_loss + loss$item()
+    }
+    
+    # Print progress
+    if (verbose && epoch %% 10 == 0) {
+      avg_loss <- total_loss / ceiling(n_samples / batch_size)
+      cat(sprintf("Epoch %d/%d, Average Loss: %.4f\n", 
+                 epoch, epochs, avg_loss))
+    }
+  }
 }
