@@ -15,7 +15,7 @@ Model <- function(
     dataset,
     layers = '8192-256-256-256-256-16',
     loss = 'sse',
-    opt.alg = 'adamax',
+    opt.alg = 'adam',
     learning.rate = 0.00075,
     ext.dir) {
   
@@ -25,31 +25,39 @@ Model <- function(
     as.integer()
   
   # Define the neural network structure
-  net <- nn_module(
-    "DNN",
+  DNN <- nn_module(
     initialize = function() {
       # Get input dimension from dataset
-      input_dim <- dim(dataset$training.df)[2]
+      self$input_dim <- dim(dataset$training.df)[2]
       
       # Create sequential container for layers
       self$network <- nn_sequential()
       
       # Add input layer
-      self$network$append(
-        nn_linear(input_dim, layer_sizes[1])
+      self$network$add_module(
+        "input",
+        nn_linear(self$input_dim, layer_sizes[1])
       )
-      self$network$append(nn_relu())
+      self$network$add_module(
+        "relu1",
+        nn_relu()
+      )
       
       # Add hidden layers
       for (i in seq_len(length(layer_sizes) - 1)) {
-        self$network$append(
+        self$network$add_module(
+          sprintf("linear%d", i + 1),
           nn_linear(layer_sizes[i], layer_sizes[i + 1])
         )
-        self$network$append(nn_relu())
+        self$network$add_module(
+          sprintf("relu%d", i + 1),
+          nn_relu()
+        )
       }
       
       # Add output layer (linear activation by default)
-      self$network$append(
+      self$network$add_module(
+        "output",
         nn_linear(layer_sizes[length(layer_sizes)], 1)
       )
     },
@@ -60,7 +68,7 @@ Model <- function(
   )
   
   # Create model instance
-  model <- net()
+  model <- DNN()
   
   # Define loss function
   criterion <- if (loss == 'sse') {
@@ -73,11 +81,10 @@ Model <- function(
   
   # Define available optimizers
   optimizers <- list(
-    adadelta = \() optim_adadelta(model$parameters, lr = learning.rate),
-    adagrad = \() optim_adagrad(model$parameters, lr = learning.rate),
-    adam = \() optim_adam(model$parameters, lr = learning.rate),
-    adamax = \() optim_adamax(model$parameters, lr = learning.rate),
-    rmsprop = \() optim_rmsprop(model$parameters, lr = learning.rate)
+    adadelta = function() optim_adadelta(model$parameters, lr = learning.rate),
+    adagrad = function() optim_adagrad(model$parameters, lr = learning.rate),
+    adam = function() optim_adam(model$parameters, lr = learning.rate),
+    rmsprop = function() optim_rmsprop(model$parameters, lr = learning.rate)
   )
   
   # Validate and select optimizer
