@@ -5,7 +5,7 @@
 #' @param layers String that defines the deep neural network architecture (e.g., "64-64")
 #' @param loss Loss function
 #' @param opt.alg Optimization algorithm
-#' @param learning.rate Learning rate
+#' @param learn.rate Learning rate
 #' @param ext.dir External directory (full path)
 #' @return A deep neural network metamodel
 #' @export
@@ -16,7 +16,7 @@ Model <- function(dataset,
                   layers = '8192-256-256-256-256-16',
                   loss = 'sse',
                   opt.alg = 'adamax',
-                  learning.rate = 0.00075,
+                  learn.rate = 0.00075,
                   ext.dir) {
   
   # parse layers string
@@ -30,7 +30,6 @@ Model <- function(dataset,
 
     initialize = function() {
       self$fc1 <- nn_linear(dim(dataset$training.df)[2], layers[1])
-      
       # dynamically create layers
       if (length(layers) > 1) {
         self$fc2 <- nn_linear(layers[1], layers[2])
@@ -56,12 +55,11 @@ Model <- function(dataset,
       if (length(layers) > 8) {
         self$fc9 <- nn_linear(layers[8], layers[9])
       }
-      
       # output layer
       self$output <- nn_linear(layers[length(layers)], 1)
     },
     
-    # forward pass through the network
+    # forward pass through neural network
     forward = function(x) {
       x <- torch_relu(self$fc1(x))
       if (length(layers) > 1) {
@@ -91,21 +89,22 @@ Model <- function(dataset,
       x <- self$output(x)
       return(x)
     }
+
   )
   
   # define optimizer based on selected algorithm
   if (opt.alg == 'adadelta') {
-    optimizer <- optim_adadelta(model$parameters, lr = learning.rate)
+    optimizer <- optim_adadelta(model$parameters, lr = learn.rate)
   } else if (opt.alg == 'adagrad') {
-    optimizer <- optim_adagrad(model$parameters, lr = learning.rate)
+    optimizer <- optim_adagrad(model$parameters, lr = learn.rate)
   } else if (opt.alg == 'adam') {
-    optimizer <- optim_adam(model$parameters, lr = learning.rate)
+    optimizer <- optim_adam(model$parameters, lr = learn.rate)
   } else if (opt.alg == 'adamax') {
-    optimizer <- optim_adamax(model$parameters, lr = learning.rate)
+    optimizer <- optim_adamax(model$parameters, lr = learn.rate)
   } else if (opt.alg == 'nadam') {
-    optimizer <- optim_nadam(model$parameters, lr = learning.rate)
+    optimizer <- optim_nadam(model$parameters, lr = learn.rate)
   } else if (opt.alg == 'rmsprop') {
-    optimizer <- optim_rmsprop(model$parameters, lr = learning.rate)
+    optimizer <- optim_rmsprop(model$parameters, lr = learn.rate)
   }
   
   # return model, loss, and optimizer

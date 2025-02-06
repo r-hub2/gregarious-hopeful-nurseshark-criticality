@@ -44,9 +44,9 @@
 #'   )
 #' })
 #'
-#' @import keras
 #' @import magrittr
 #' @import reticulate
+#' @import torch
 
 NN <- function(
   batch.size = 8192,

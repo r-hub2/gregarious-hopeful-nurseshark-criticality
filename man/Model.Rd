@@ -9,7 +9,7 @@ Model(
   layers = "8192-256-256-256-256-16",
   loss = "sse",
   opt.alg = "adamax",
-  learning.rate = 0.00075,
+  learn.rate = 0.00075,
   ext.dir
 )
 }
@@ -22,7 +22,7 @@ Model(
 
 \item{opt.alg}{Optimization algorithm}
 
-\item{learning.rate}{Learning rate}
+\item{learn.rate}{Learning rate}
 
 \item{ext.dir}{External directory (full path)}
 }
