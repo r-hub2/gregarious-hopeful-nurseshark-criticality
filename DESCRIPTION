@@ -14,6 +14,6 @@ RoxygenNote: 7.2.3
 Imports: bnlearn, dplyr, evd, fitdistrplus, ggplot2, magrittr,
         parallel, reticulate, scales, torch
 NeedsCompilation: no
-Packaged: 2025-02-06 03:17:55 UTC; Will
+Packaged: 2025-02-06 03:32:30 UTC; Will
 Author: William Zywiec [aut, cre] (<https://orcid.org/0000-0002-1842-9599>)
 Maintainer: William Zywiec <willzywiec@gmail.com>
