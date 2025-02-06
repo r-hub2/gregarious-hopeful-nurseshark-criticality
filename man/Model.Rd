@@ -8,7 +8,7 @@ Model(
   dataset,
   layers = "8192-256-256-256-256-16",
   loss = "sse",
-  opt.alg = "adamax",
+  opt.alg = "adam",
   learn.rate = 0.00075,
   ext.dir
 )

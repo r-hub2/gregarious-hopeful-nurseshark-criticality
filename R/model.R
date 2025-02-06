@@ -15,7 +15,7 @@
 Model <- function(dataset,
                   layers = '8192-256-256-256-256-16',
                   loss = 'sse',
-                  opt.alg = 'adamax',
+                  opt.alg = 'adam',
                   learn.rate = 0.00075,
                   ext.dir) {
   
@@ -99,10 +99,6 @@ Model <- function(dataset,
     optimizer <- optim_adagrad(model$parameters, lr = learn.rate)
   } else if (opt.alg == 'adam') {
     optimizer <- optim_adam(model$parameters, lr = learn.rate)
-  } else if (opt.alg == 'adamax') {
-    optimizer <- optim_adamax(model$parameters, lr = learn.rate)
-  } else if (opt.alg == 'nadam') {
-    optimizer <- optim_nadam(model$parameters, lr = learn.rate)
   } else if (opt.alg == 'rmsprop') {
     optimizer <- optim_rmsprop(model$parameters, lr = learn.rate)
   }
