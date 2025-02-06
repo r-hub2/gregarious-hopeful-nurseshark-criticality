@@ -11,7 +11,7 @@
 #' @param layers String that defines the deep neural network architecture (e.g., "64-64")
 #' @param loss Loss function
 #' @param opt.alg Optimization algorithm
-#' @param learning.rate Learning rate
+#' @param learn.rate Learning rate
 #' @param val.split Validation split
 #' @param overwrite Boolean (TRUE/FALSE) that determines if files should be overwritten
 #' @param replot Boolean (TRUE/FALSE) that determines if .png files should be replotted
@@ -57,7 +57,7 @@ NN <- function(
   layers = '8192-256-256-256-256-16',
   loss = 'sse',
   opt.alg = 'adam',
-  learning.rate = 0.00075,
+  learn.rate = 0.00075,
   val.split = 0.2,
   overwrite = FALSE,
   replot = TRUE,
@@ -85,7 +85,7 @@ NN <- function(
     paste0('layers: ', layers),
     paste0('loss: ', loss),
     paste0('optimization algorithm: ', opt.alg),
-    paste0('learning rate: ', learning.rate),
+    paste0('learning rate: ', learn.rate),
     paste0('validation split: ', val.split),
     paste0('external directory: ', ext.dir),
     paste0('training directory: ', training.dir)))
@@ -177,7 +177,7 @@ NN <- function(
 
     if (length(model.files) < ensemble.size) {
       for (i in (length(model.files) + 1):ensemble.size) {
-        metamodel[[i]] <- Model(dataset, layers, loss, opt.alg, learning.rate, ext.dir)
+        metamodel[[i]] <- Model(dataset, layers, loss, opt.alg, learn.rate, ext.dir)
         history[[i]] <- Fit(dataset, metamodel[[i]], batch.size, epochs, val.split, verbose, remodel.dir)
         Plot(i = i, history = history[[i]], plot.dir = model.dir)
         torch::save(metamodel[[i]], paste0(model.dir, '/', i, '.h5'))

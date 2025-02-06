@@ -13,7 +13,7 @@ NN(
   layers = "8192-256-256-256-256-16",
   loss = "sse",
   opt.alg = "adam",
-  learning.rate = 0.00075,
+  learn.rate = 0.00075,
   val.split = 0.2,
   overwrite = FALSE,
   replot = TRUE,
@@ -40,7 +40,7 @@ NN(
 
 \item{opt.alg}{Optimization algorithm}
 
-\item{learning.rate}{Learning rate}
+\item{learn.rate}{Learning rate}
 
 \item{val.split}{Validation split}
 
